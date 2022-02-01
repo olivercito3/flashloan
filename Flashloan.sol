@@ -23,7 +23,7 @@ contract Flashloan is ICallee, DydxFlashloanBase {
     IUniswapV2Router02 sushi;
     IUniswapV2Router02 uniswap;
     IWeth weth;
-    IERC20 ohm;
+    IERC20 aave;
     address beneficiary;
     
 
@@ -31,13 +31,13 @@ contract Flashloan is ICallee, DydxFlashloanBase {
         address sushiAddress,
         address uniswapAddress,
         address wethAddress,
-        address ohmAddress,
+        address aaveAddress,
         address beneficiaryAddress
     ) public {
       sushi = IUniswapV2Router02(sushiAddress);
       uniswap = IUniswapV2Router02(uniswapAddress);
       weth = IWeth(wethAddress);
-      ohm = IERC20(ohmAddress);
+      aave = IERC20(aaveAddress);
       beneficiary = beneficiaryAddress;
     }
 
@@ -52,13 +52,13 @@ contract Flashloan is ICallee, DydxFlashloanBase {
         uint256 balanceWeth = weth.balanceOf(address(this));
 
         if(arbInfo.direction == Direction.SushiToUniswap) {
-          //Buy OHM on Sushi
+          //Buy ETH on Sushi
           weth.approve(address(sushi), balanceWeth); 
           address[] memory path = new address[](2);
           path[0] = address(weth);
-          path[1] = address(ohm);
+          path[1] = address(aave);
           uint[] memory minOuts = sushi.getAmountsOut(balanceWeth, path); 
-          sushi.swapExactTokensForOHM(
+          sushi.swapExactTokensForTokens(
             balanceWeth,
             minOuts[1], 
             path, 
@@ -66,12 +66,12 @@ contract Flashloan is ICallee, DydxFlashloanBase {
             now
           );
 
-          //Sell OHM on Uniswap
+          //Sell ETH on Uniswap
           address[] memory path2 = new address[](2);
-          path2[0] = address(ohm);
+          path2[0] = address(aave);
           path2[1] = address(weth);
           uint[] memory minOuts2 = uniswap.getAmountsOut(address(this).balance, path2); 
-          uniswap.swapExactOHMForTokens.value(address(this).balance)(
+          uniswap.swapTokensForExactTokens.value(address(this).balance)(
             minOuts2[1], 
             path2, 
             address(this), 
@@ -82,9 +82,9 @@ contract Flashloan is ICallee, DydxFlashloanBase {
           weth.approve(address(uniswap), balanceWeth); 
           address[] memory path = new address[](2);
           path[0] = address(weth);
-          path[1] = address(ohm);
+          path[1] = address(aave);
           uint[] memory minOuts = uniswap.getAmountsOut(balanceWeth, path); 
-          uniswap.swapExactTokensForOHM(
+          uniswap.swapExactTokensForTokens(
             balanceWeth, 
             minOuts[1], 
             path, 
@@ -92,12 +92,12 @@ contract Flashloan is ICallee, DydxFlashloanBase {
             now
           );
 
-          //Sell  on Sushi
+          //Sell ETH on Sushi
           address[] memory path2 = new address[](2);
-          path2[0] = address(ohm);
+          path2[0] = address(aave);
           path2[1] = address(weth);
           uint[] memory minOuts2 = sushi.getAmountsOut(address(this).balance, path2); 
-          sushi.swapExactOHMForTokens.value(address(this).balance)( 
+          sushi.swapTokensForExactTokens.value(address(this).balance)( 
             minOuts2[1], 
             path2, 
             address(this), 
